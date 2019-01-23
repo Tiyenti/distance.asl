@@ -1,6 +1,5 @@
 state("distance")
 {
-    int ourLoadValue : "mono.dll", 0x001F40AC, 0x72C, 0x10, 0x20, 0x4C, 0x17C;
     int finishGrid : "Distance.exe", 0x01022164, 0x14;
     string255 richPresence : "discord-rpc.dll", 0xD51C;
     int gameState : "mono.dll", 0x001F62CC, 0x50, 0x3E0, 0x0, 0x18, 0x40
@@ -97,11 +96,6 @@ start
 //    }
 //
 //    return current.richPresence.Contains("In Main Menu") & !old.richPresence.Contains("In Main Menu");
-//}
-
-//isLoading
-//{
-//    return current.gameState != 9;
 //}
 
 isLoading
