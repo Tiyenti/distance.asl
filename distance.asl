@@ -1,3 +1,6 @@
+// Distance Autosplitter script
+// Created by Brionac, Californ1a, Seekr, and TntMatthew
+
 state("distance")
 {
     int finishGrid : "Distance.exe", 0x01022164, 0x14;
@@ -18,13 +21,14 @@ startup
 
 init
 {
-    // This value is basically just here because leaving the main menu was splitting,
-    // and I couldn't figure out a reasonable method to make it not do that, so I just
-    // use this variable to eat that split and fix it that way.
+    // This value here abuses the fact that leaving the main menu counts as splitting with
+    // the finish pointer we use to prevent time from counting during run start and the first loading screen.
+    // When leaving from the main menu, we eat that split - but we increment this value by 1.
+    // If the value == 0, time is prevented from counting, but otherwise, it may count as normal.
     vars.splitOnce = 0;
 
-    // Used to to prevent time from counting between the finish and the next load screen
-    vars.finished = false;
+    // for ease of reading, we'll give the gameState values names here and use those instead
+    vars.unloadScene = 0;
 }
 
 update
@@ -34,12 +38,7 @@ update
         vars.splitOnce = 0;
     }
 
-    if (vars.finished && (current.gameState != 9 && old.gameState == 9))
-    {
-        vars.finished = false;
-    }
-
-    print(current.gameState.ToString() + " " + vars.finished);
+    print(current.gameState.ToString());
 }
 
 split
@@ -64,15 +63,13 @@ split
 
     if (current.finishGrid == 0 && old.finishGrid != 0)
     {
-        vars.ticksInLevel = 0;
-        
-        if (vars.splitOnce > 0)
+        if (!old.richPresence.Contains("In Main Menu"))
         {
-            vars.finished = true;
             return current.finishGrid == 0 && old.finishGrid != 0;
         }
         else
         {
+            // Increment splitOnce to show that time may now be counted
             vars.splitOnce++;
             return false;
         }
@@ -98,8 +95,23 @@ start
 //    return current.richPresence.Contains("In Main Menu") & !old.richPresence.Contains("In Main Menu");
 //}
 
+gameTime
+{
+    // Prevent time from counting before the run begins
+    if (vars.splitOnce == 0)
+    {
+        return new TimeSpan();
+    }
+}
+
 isLoading
 {
+    // Prevents LiveSplit's timer from freaking out over game time constantly being set every tick
+    if (vars.splitOnce == 0)
+    {
+        return true;
+    }
+
     if (current.richPresence.Contains("In Main Menu"))
     {
         if (current.gameState < 7)
