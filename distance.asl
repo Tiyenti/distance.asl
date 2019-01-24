@@ -58,22 +58,29 @@ split
         return false;
     }
 
-    if (old.gameState == 8)
+    if (current.richPresence.Contains("Echoes") || current.richPresence.Contains("Collapse"))
     {
-        return false;
+        return current.gameState == 0 && old.gameState != 0;
     }
-
-    if (current.finishGrid == 0 && old.finishGrid != 0)
+    else
     {
-        if (!old.richPresence.Contains("In Main Menu"))
+        if (old.gameState == 8)
         {
-            return current.finishGrid == 0 && old.finishGrid != 0;
-        }
-        else
-        {
-            // Increment splitOnce to show that time may now be counted
-            vars.splitOnce++;
             return false;
+        }
+
+        if (current.finishGrid == 0 && old.finishGrid != 0)
+        {
+            if (!old.richPresence.Contains("In Main Menu"))
+            {
+                return current.finishGrid == 0 && old.finishGrid != 0;
+            }
+            else
+            {
+                // Increment splitOnce to show that time may now be counted
+                vars.splitOnce++;
+                return false;
+            }
         }
     }
 }
