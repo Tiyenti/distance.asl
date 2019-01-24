@@ -11,13 +11,14 @@ state("distance")
 
 startup
 {
-    settings.Add("split_cut", false, "Split after campaign intro cutscenes");
+    settings.Add("combine_cut", true, "Combine cutscenes and their adjacent levels into one split");
 
-    settings.CurrentDefaultParent = "split_cut";
+    settings.CurrentDefaultParent = "combine_cut";
 
-    settings.Add("split_inst", false, "Split after Instantiation");
-    settings.Add("split_long", false, "Split after Long Ago");
-    settings.Add("split_mob", false, "Split after Mobilization");
+    settings.Add("combine_inst", true, "Instantiation");
+    settings.Add("combine_long", true, "Long Ago");
+    settings.Add("combine_mob", true, "Mobilization");
+    settings.Add("combine_col", true, "Collapse");
 }
 
 init
@@ -39,15 +40,20 @@ update
 
 split
 {
-    if (current.richPresence.Contains("Instantiation") && settings["split_inst"] == false)
+    if (current.richPresence.Contains("Instantiation") && settings["combine_inst"] == true)
     {
         return false;
     }
-    if (current.richPresence.Contains("Long Ago") && settings["split_long"] == false)
+    if (current.richPresence.Contains("Long Ago") && settings["combine_long"] == true)
     {
         return false;
     }
-    if (current.richPresence.Contains("Mobilization") && settings["split_mob"] == false)
+    if (current.richPresence.Contains("Mobilization") && settings["combine_mob"] == true)
+    {
+        return false;
+    }
+
+    if (current.richPresence.Contains("Terminus") && current.richPresence.Contains("Nexus | Solo") && settings["combine_col"] == true)
     {
         return false;
     }
