@@ -1,11 +1,12 @@
-// Distance Autosplitter script
+// Distance Autosplitter script - Provides autostart/split/reset and load removal
 // Created by Brionac, Californ1a, Seekr, and TntMatthew
 
 state("distance")
 {
     int finishGrid : "Distance.exe", 0x01022164, 0x14;
     string255 richPresence : "discord-rpc.dll", 0xD51C;
-    int gameState : "mono.dll", 0x001F62CC, 0x50, 0x3E0, 0x0, 0x18, 0x40
+    int gameState : "mono.dll", 0x001F62CC, 0x50, 0x3E0, 0x0, 0x18, 0x40;
+    string255 confirmDialog : "mono.dll", 0x001F62CC, 0x50, 0x3E0, 0x0, 0x18, 0x20, 0x7c, 0x28, 0x10, 0x11c, 0xc;
 }
 
 startup
@@ -26,9 +27,6 @@ init
     // When leaving from the main menu, we eat that split - but we increment this value by 1.
     // If the value == 0, time is prevented from counting, but otherwise, it may count as normal.
     vars.splitOnce = 0;
-
-    // for ease of reading, we'll give the gameState values names here and use those instead
-    vars.unloadScene = 0;
 }
 
 update
@@ -37,8 +35,6 @@ update
     {
         vars.splitOnce = 0;
     }
-
-    print(current.gameState.ToString());
 }
 
 split
@@ -84,16 +80,19 @@ start
     }
 }
 
-//reset
-//{
-//    if (current.richPresence.Contains("In Main Menu") &&
-//        (old.richPresence.Contains("Credits") || old.richPresence.Contains("Echoes") || old.richPresence.Contains("Collapse")))
-//    {
-//        return false;
-//    }
-//
-//    return current.richPresence.Contains("In Main Menu") & !old.richPresence.Contains("In Main Menu");
-//}
+reset
+{
+    if (current.confirmDialog.StartsWith("Are you sure that you'd like to return to the main menu?")
+        && !old.confirmDialog.StartsWith("Are you sure that you'd like to return to the main menu?"))
+    {
+        return true;
+    }
+    else if (current.confirmDialog.StartsWith("Are you sure you want to return to the main menu?")
+        && !old.confirmDialog.StartsWith("Are you sure you want to return to the main menu?"))
+    {
+        return true;
+    }
+}
 
 gameTime
 {
