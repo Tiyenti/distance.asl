@@ -58,7 +58,7 @@ split
         return false;
     }
 
-    if (current.richPresence.Contains("Echoes") || current.richPresence.Contains("Collapse"))
+    if (current.richPresence.Contains("\"Echoes\"") || current.richPresence.Contains("Collapse"))
     {
         return current.gameState == 0 && old.gameState != 0;
     }
