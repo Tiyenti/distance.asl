@@ -93,8 +93,8 @@ reset
     {
         return true;
     }
-    else if (current.confirmDialog.StartsWith("Are you sure you want to return to the main menu?")
-        && !old.confirmDialog.StartsWith("Are you sure you want to return to the main menu?"))
+    else if (current.confirmDialog.StartsWith("Are you sure you want to go to the main menu?")
+        && !old.confirmDialog.StartsWith("Are you sure you want to go to the main menu?"))
     {
         return true;
     }
