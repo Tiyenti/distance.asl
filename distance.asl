@@ -95,15 +95,18 @@ start
 
 reset
 {
-    if (current.confirmDialog.StartsWith("Are you sure that you'd like to return to the main menu?")
-        && !old.confirmDialog.StartsWith("Are you sure that you'd like to return to the main menu?"))
+    if (current.confirmDialog != null)
     {
-        return true;
-    }
-    else if (current.confirmDialog.StartsWith("Are you sure you want to go to the main menu?")
-        && !old.confirmDialog.StartsWith("Are you sure you want to go to the main menu?"))
-    {
-        return true;
+        if (current.confirmDialog.StartsWith("Are you sure that you'd like to return to the main menu?")
+            && !old.confirmDialog.StartsWith("Are you sure that you'd like to return to the main menu?"))
+        {
+            return true;
+        }
+        else if (current.confirmDialog.StartsWith("Are you sure you want to go to the main menu?")
+            && !old.confirmDialog.StartsWith("Are you sure you want to go to the main menu?"))
+        {
+            return true;
+        }
     }
 }
 
