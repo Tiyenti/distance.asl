@@ -15,10 +15,10 @@ startup
 
     settings.CurrentDefaultParent = "combine_cut";
 
-    settings.Add("combine_inst", true, "Instantiation");
-    settings.Add("combine_long", true, "Long Ago");
-    settings.Add("combine_mob", true, "Mobilization");
-    settings.Add("combine_col", true, "Collapse");
+    settings.Add("combine_inst", true, "Instantiation + Cataclysm");
+    settings.Add("combine_long", true, "Long Ago + Forgotten Utopia");
+    settings.Add("combine_mob", true, "Mobilization + Resonance");
+    settings.Add("combine_col", true, "Terminus + Collapse");
 }
 
 init
