@@ -7,6 +7,7 @@ state("distance")
     string255 richPresence : "discord-rpc.dll", 0xD51C;
     int gameState : "mono.dll", 0x001F62CC, 0x50, 0x3E4, 0x0, 0x18, 0x44;
     string255 confirmDialog : "mono.dll", 0x001F62CC, 0x50, 0x3E4, 0x0, 0x18, 0x20, 0x7c, 0x28, 0x10, 0x11c, 0xc;
+    int finishType : "mono.dll", 0x001F62CC, 0x50, 0x3e4, 0x0, 0x18, 0x10, 0xc, 0x8, 0x10, 0x20;
 }
 
 // keeping this around for any patch, though we'll need a way to detect what version of the game is being run before
@@ -83,7 +84,10 @@ split
         {
             if (!old.richPresence.Contains("In Main Menu"))
             {
-                return current.finishGrid == 0 && old.finishGrid != 0;
+                if (current.finishType == 1)
+                {
+                    return current.finishGrid == 0 && old.finishGrid != 0;
+                }
             }
             else
             {
