@@ -6,7 +6,7 @@ state("distance")
     int finishGrid : "Distance.exe", 0x01022164, 0x14;
     string255 richPresence : "discord-rpc.dll", 0xD51C;
     int gameState : "mono.dll", 0x001F62C8, 0x0, 0x50, 0x3E0, 0x0, 0x18, 0x44;
-    string255 confirmDialog : "mono.dll", 0x001F62C8, 0x0, 0x50, 0x3E0, 0x0, 0x18, 0x20, 0x7C, 0x28, 0x10, 0x11c, 0xC;
+    string255 confirmDialog : "mono.dll", 0x001F62C8, 0x0, 0x50, 0x3E0, 0x0, 0x18, 0x20, 0x80, 0x28, 0x10, 0x11c, 0xC;
     int finishType : "mono.dll", 0x001F62C8, 0x0, 0x50, 0x3E0, 0x0, 0x18, 0x10, 0xC, 0x8, 0x10, 0x20;
 }
 
@@ -30,6 +30,11 @@ startup
     settings.Add("combine_long", true, "Long Ago + Forgotten Utopia");
     settings.Add("combine_mob", true, "Mobilization + Resonance");
     settings.Add("combine_col", true, "Terminus + Collapse");
+
+    settings.CurrentDefaultParent = null;
+
+    settings.Add("disable_enemy", false, "Disable Enemy split (if you prefer to manual split on hitting the visible grid)");
+
 }
 
 init
@@ -60,6 +65,10 @@ split
         return false;
     }
     if (current.richPresence.Contains("Mobilization") && settings["combine_mob"] == true)
+    {
+        return false;
+    }
+    if (current.richPresence.Contains("Enemy") && settings["disable_enemy"] == true)
     {
         return false;
     }
