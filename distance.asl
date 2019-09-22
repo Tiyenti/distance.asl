@@ -1,24 +1,37 @@
-// Distance Autosplitter script - Provides autostart/split/reset and load removal
-// Created by Brionac, Californ1a, Seekr, and TntMatthew
+/* Distance Autosplitter script - Provides autostart/split/reset and load removal
+Created by Brionac, Californ1a, Seekr, and TntMatthew
 
-state("distance")
+---
+Thanks to ClownFiesta for the base script to read from an output log:
+https://raw.githubusercontent.com/ClownFiesta/AutoSplitters/master/LiveSplit.SlayTheSpire.asl
+
+Copyright (c) 2018 ClownFiesta
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+---
+*/
+
+state("Distance")
 {
-    int finishGrid : "Distance.exe", 0x01022164, 0x14;
     string255 richPresence : "discord-rpc.dll", 0xD51C;
     int gameState : "mono.dll", 0x001F62C8, 0x0, 0x50, 0x3E0, 0x0, 0x18, 0x44;
-    string255 confirmDialog : "mono.dll", 0x001F62C8, 0x0, 0x50, 0x3E0, 0x0, 0x18, 0x20, 0x80, 0x28, 0x10, 0x11c, 0xC;
-    int finishType : "mono.dll", 0x001F62C8, 0x0, 0x50, 0x3E0, 0x0, 0x18, 0x10, 0xC, 0x8, 0x10, 0x20;
 }
-
-// keeping this around for any patch, though we'll need a way to detect what version of the game is being run before
-// this will be able to work
-//state("distance")
-//{
-//    int finishGrid : "Distance.exe", 0x01022164, 0x14;
-//    string255 richPresence : "discord-rpc.dll", 0xD51C;
-//    int gameState : "mono.dll", 0x001F62CC, 0x50, 0x3E0, 0x0, 0x18, 0x40;
-//    string255 confirmDialog : "mono.dll", 0x001F62CC, 0x50, 0x3E0, 0x0, 0x18, 0x20, 0x7c, 0x28, 0x10, 0x11c, 0xc;
-//}
 
 startup
 {
@@ -34,118 +47,171 @@ startup
     settings.CurrentDefaultParent = null;
 
     settings.Add("disable_enemy", false, "Disable Enemy split (if you prefer to manual split on hitting the visible grid)");
-
 }
 
 init
-{
-    // This value here abuses the fact that leaving the main menu counts as splitting with
-    // the finish pointer we use to prevent time from counting during run start and the first loading screen.
-    // When leaving from the main menu, we eat that split - but we increment this value by 1.
-    // If the value == 0, time is prevented from counting, but otherwise, it may count as normal.
-    vars.splitOnce = 0;
+{	
+    //Get the path for the logs
+    vars.stsLogPath =  System.IO.Directory.GetParent(modules.First().FileName).FullName + "\\speedrun_data.txt";
+    //Open the logs and set the position to the end of the file
+    vars.reader = new StreamReader(new FileStream(vars.stsLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+    vars.reader.BaseStream.Seek(0, SeekOrigin.End);
+    vars.lastPointerPosition = vars.reader.BaseStream.Position;
+    //Set the command to "UPDATE"
+    vars.command = "UPDATE";
+
+    vars.isLoading = false;
+    vars.firstLoadEnd = false;
+    vars.prevLoadWasMM = false;
 }
 
 update
 {
+    // this seemed to be causing issues so I commented it out, but i will keep it here for convenience in case I feel like trying to add it back
+    /* if (vars.reader.BaseStream.Length == vars.lastPointerPosition){ //If the logs haven't changed, skip the rest of the code (update, reset, split, start, etc.). We place it first to lessen the load on the computer
+        return false;
+    } else*/ 
+
+    if (vars.reader.BaseStream.Length < vars.lastPointerPosition){ //If the logs have been reset, then place the pointer at the end and update vars.lastPointerPosition and skip the rest of the code.
+        vars.reader.BaseStream.Seek(0, SeekOrigin.End);
+        vars.lastPointerPosition = vars.reader.BaseStream.Position;
+        return false;
+    }
+
     if (timer.CurrentPhase == TimerPhase.NotRunning)
     {
-        vars.splitOnce = 0;
+        vars.firstLoadEnd = false;
+    }
+
+    string line = "";
+	//string prevLine = "";
+    while((line = vars.reader.ReadLine()) != null){ //Read the log until its end
+        //Updates vars.lastPointerPosition to its new position.
+        vars.lastPointerPosition = vars.reader.BaseStream.Position;
+        print(line);
+        //Changes the value of vars.command depending on the content of line and returns true if a command needs to be issued.
+        if (line.Contains("SpeedrunStart"))
+        {
+            vars.command = "START";
+            return true;
+        }
+        // Cutscenes end on ModeFinished so handle those here
+        else if (line.Contains("ModeFinished"))
+        {
+            if (line.Contains("Instantiation") && settings["combine_inst"] == false) 
+            {
+                vars.command = "SPLIT";
+                return true;
+            }
+            if (line.Contains("Long Ago") && settings["combine_long"] == false)
+            {
+                vars.command = "SPLIT";
+                return true;
+            }
+            if (line.Contains("Mobilization") && settings["combine_mob"] == false)
+            {
+                vars.command = "SPLIT";
+                return true;
+            }
+        }
+        else if (line.Contains("LevelEnd"))
+        {
+            if (!line.Contains("Echoes"))
+            {
+                if (line.Contains("Enemy") && settings["disable_enemy"] == true)
+                {
+                    return false;
+                }
+                else if (line.Contains("Terminus") && settings["combine_col"] == true)
+                {
+                    return false;
+                }
+                else
+                {
+                    vars.command = "SPLIT";
+                    return true;
+                }
+            }
+        }
+        // We don't use the LoadStart/LoadEnd lines from the log to actually detect loads as the MainMenu doesn't have
+        // a LoadEnd line printed for it - that'd break multiset categories. However, we use it to detect the first load
+        // to prevent time from counting at the start.
+        else if (line.Contains("LoadEnd"))
+        {
+            if (vars.firstLoadEnd == false)
+            {
+                vars.firstLoadEnd = true;
+            }
+            return true;
+        }
+        else if (line.Contains("SpeedrunEnd"))
+        {
+            if (line.Contains("(DNF)"))
+            {
+                vars.command = "RESET";
+                return true;
+            }
+            else
+            {
+                if (current.richPresence.Contains("\"Echoes\"") || current.richPresence.Contains("Collapse"))
+                {
+                    vars.command = "SPLIT";
+                    return true;
+                }
+            }
+        }
+		//prevLine = line;
+    }
+
+}
+
+reset
+{
+    if (vars.command == "RESET")
+    {
+        vars.command = "UPDATE";
+        return true;
     }
 }
 
 split
 {
-    if (current.richPresence.Contains("Instantiation") && settings["combine_inst"] == true)
+    if (vars.command == "SPLIT")
     {
-        return false;
-    }
-    if (current.richPresence.Contains("Long Ago") && settings["combine_long"] == true)
-    {
-        return false;
-    }
-    if (current.richPresence.Contains("Mobilization") && settings["combine_mob"] == true)
-    {
-        return false;
-    }
-    if (current.richPresence.Contains("Enemy") && settings["disable_enemy"] == true)
-    {
-        return false;
-    }
-
-    if (current.richPresence.Contains("Terminus") && current.richPresence.Contains("Nexus | Solo") && settings["combine_col"] == true)
-    {
-        return false;
-    }
-
-    if (current.richPresence.Contains("\"Echoes\"") || current.richPresence.Contains("Collapse"))
-    {
-        return current.gameState == 0 && old.gameState != 0;
-    }
-    else
-    {
-        if (old.gameState == 8)
-        {
-            return false;
-        }
-
-        if (current.finishGrid == 0 && old.finishGrid != 0)
-        {
-            if (!old.richPresence.Contains("In Main Menu"))
-            {
-                if (current.finishType == 1)
-                {
-                    return current.finishGrid == 0 && old.finishGrid != 0;
-                }
-            }
-            else
-            {
-                // Increment splitOnce to show that time may now be counted
-                vars.splitOnce++;
-                return false;
-            }
-        }
+        vars.command = "UPDATE";
+        return true;
     }
 }
- 
+
 start
 {
-    if (current.richPresence.Contains("In Main Menu"))
+    if (vars.command == "START")
     {
-        return current.gameState == 0 && old.gameState == 7;
+        vars.command = "UPDATE";
+        return true;
     }
 }
 
-reset
-{
-    if (current.confirmDialog != null)
-    {
-        if (current.confirmDialog.StartsWith("Are you sure that you'd like to return to the main menu?")
-            && !old.confirmDialog.StartsWith("Are you sure that you'd like to return to the main menu?"))
-        {
-            return true;
-        }
-        else if (current.confirmDialog.StartsWith("Are you sure you want to go to the main menu?")
-            && !old.confirmDialog.StartsWith("Are you sure you want to go to the main menu?"))
-        {
-            return true;
-        }
-    }
+exit
+{   
+    // Resets the timer if the game closes (either from a bug or manually)
+    new TimerModel() { CurrentState = timer }.Reset();
+    vars.reader.Close();
+    vars.lastPointerPosition = 0;
+    vars.isLoading = false;
+    vars.firstLoadEnd = false;
 }
 
-gameTime
+shutdown
 {
-    // Prevent time from counting before the run begins
-    if (vars.splitOnce == 0)
-    {
-        return new TimeSpan();
-    }
+    // Closing the reader (Only useful when you close LiveSplit before closing Distance)
+    vars.reader.Close();
 }
 
 isLoading
 {
-    // Prevents LiveSplit's timer from freaking out over game time constantly being set every tick
-    if (vars.splitOnce == 0)
+    // This stops LiveSplit's timer from freaking out due to the first-load timestop hack
+    if (vars.firstLoadEnd == false)
     {
         return true;
     }
@@ -168,5 +234,14 @@ isLoading
     else
     {
         return false;
+    }
+}
+
+gameTime
+{
+    // Prevent time from counting before the first load screen
+    if (vars.firstLoadEnd == false)
+    {
+        return new TimeSpan();
     }
 }
