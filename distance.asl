@@ -3,7 +3,7 @@
 
 state("distance")
 {
-    int finishGrid : "Distance.exe", 0x01022164, 0x14;
+    byte playerFinished : "mono.dll", 0x001F62C8, 0x0, 0x50, 0x3E0, 0x0, 0x18, 0x10, 0xC, 0x8, 0x10, 0x8, 0x6D;
     string255 richPresence : "discord-rpc.dll", 0xD51C;
     int gameState : "mono.dll", 0x001F62C8, 0x0, 0x50, 0x3E0, 0x0, 0x18, 0x44;
     string255 confirmDialog : "mono.dll", 0x001F62C8, 0x0, 0x50, 0x3E0, 0x0, 0x18, 0x20, 0x80, 0x28, 0x10, 0x11c, 0xC;
@@ -39,10 +39,9 @@ startup
 
 init
 {
-    // This value here abuses the fact that leaving the main menu counts as splitting with
-    // the finish pointer we use to prevent time from counting during run start and the first loading screen.
-    // When leaving from the main menu, we eat that split - but we increment this value by 1.
-    // If the value == 0, time is prevented from counting, but otherwise, it may count as normal.
+    // There's a small period of time at the start of a run where the game is in a not-loading state,
+    // so in order to keep the start time at 0.00 we use this value. Once the first loading screen is detected,
+    // we set this to 1 (todo: change this to a boolean, change variable name), which will allow time to be counted
     vars.splitOnce = 0;
 }
 
@@ -84,25 +83,17 @@ split
     }
     else
     {
-        if (old.gameState == 8)
+        if (current.finishType == 1)
         {
-            return false;
+            return current.playerFinished == 1 && old.playerFinished != 1;
         }
 
-        if (current.finishGrid == 0 && old.finishGrid != 0)
+        // Detect the first load, and then set the flag that will allow the timer to count
+        if (vars.splitOnce == 0)
         {
-            if (!old.richPresence.Contains("In Main Menu"))
+            if (current.gameState < 7)
             {
-                if (current.finishType == 1)
-                {
-                    return current.finishGrid == 0 && old.finishGrid != 0;
-                }
-            }
-            else
-            {
-                // Increment splitOnce to show that time may now be counted
-                vars.splitOnce++;
-                return false;
+                vars.splitOnce = 1;
             }
         }
     }
