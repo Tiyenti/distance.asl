@@ -83,9 +83,12 @@ split
     }
     else
     {
-        if (current.finishType == 1)
+        if (current.playerFinished == 1 && old.playerFinished != 1)
         {
-            return current.playerFinished == 1 && old.playerFinished != 1;
+            if (current.finishType == 1)
+            {
+                return true;
+            }
         }
 
         // Detect the first load, and then set the flag that will allow the timer to count
