@@ -57,23 +57,28 @@ split
 {
     if (current.richPresence.Contains("Instantiation") && settings["combine_inst"] == true)
     {
+        //print("Instantiation combined with Cataclysm, skipping");
         return false;
     }
     if (current.richPresence.Contains("Long Ago") && settings["combine_long"] == true)
     {
+        //print("Long Ago combined with Utopia, skipping");
         return false;
     }
     if (current.richPresence.Contains("Mobilization") && settings["combine_mob"] == true)
     {
+        //print("Mobilization combined with Resonance, skipping");
         return false;
     }
     if (current.richPresence.Contains("Enemy") && settings["disable_enemy"] == true)
     {
+        //print("Enemy split disabled, skipping");
         return false;
     }
 
     if (current.richPresence.Contains("Terminus") && current.richPresence.Contains("Nexus | Solo") && settings["combine_col"] == true)
     {
+        //print("Terminus combined with Collapse, skipping");
         return false;
     }
 
@@ -85,10 +90,13 @@ split
     {
         if (current.playerFinished == 1 && old.playerFinished != 1)
         {
-            if (current.finishType == 1)
-            {
-                return true;
-            }
+            //print("finishType = " + current.finishType + " | does it == 1?");
+            //if (current.finishType == 1)
+            //{
+                //print("if true, will split!");
+                //return true;
+                return current.finishType <= 1;
+            //}
         }
 
         // Detect the first load, and then set the flag that will allow the timer to count
