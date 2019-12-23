@@ -88,16 +88,21 @@ split
     }
     else
     {
-        if (current.playerFinished == 1 && old.playerFinished != 1)
+        if (current.finishType == 1 && old.finishType != 1)
         {
-            //print("finishType = " + current.finishType + " | does it == 1?");
+            return true;
+        }
+
+        /* if (current.playerFinished == 1 && old.playerFinished != 1)
+        {
+            print("finishType = " + current.finishType + " | is it <= 1?");
             //if (current.finishType == 1)
             //{
                 //print("if true, will split!");
                 //return true;
-                return current.finishType <= 1;
+                //return current.finishType <= 1;
             //}
-        }
+        }*/
 
         // Detect the first load, and then set the flag that will allow the timer to count
         if (vars.splitOnce == 0)
