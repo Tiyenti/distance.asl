@@ -1,5 +1,5 @@
 // Distance Autosplitter script - Provides autostart/split/reset and load removal
-// Created by Brionac, Californ1a, Seekr, and TntMatthew
+// Created by Brionac, Californ1a, Seekr, and Tiyenti
 
 state("distance")
 {
