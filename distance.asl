@@ -75,8 +75,11 @@ init
 	vars.Unity.TryOnLoad = (Func<dynamic, bool>)(helper =>
 	{
 		var str = helper.GetClass("mscorlib", "String"); // String
+		var dict = helper.GetClass("mscorlib", "Dictionary`2"); // Dictionary<TKey, TValue>
 
 		var g = helper.GetClass("Assembly-CSharp", 0x200021C); // G
+		if (g == null)
+			return false;
 
 		var pm = helper.GetClass("Assembly-CSharp", 0x2000C2D); // PlayerManager
 		var lp = helper.GetClass("Assembly-CSharp", 0x2000C2E); // LocalPlayer
@@ -84,13 +87,19 @@ init
 
 		var gMan = helper.GetClass("Assembly-CSharp", 0x2000904); // GameManager
 		var gm = helper.GetClass("Assembly-CSharp", 0x200091E); // GameMode
+		var am = helper.GetClass("Assembly-CSharp", 0x2000720); // AdventureMode
 		var li = helper.GetClass("Assembly-CSharp", 0x2000B3F); // LevelInfo
+
+		var gdm = helper.GetClass("Assembly-CSharp", 0x20008F4); // GameDataManager
+		var gd = helper.GetClass("Assembly-CSharp", 0x20008F2); // GameData
 
 		vars.Unity.Make<bool>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finished_"]).Name = "playerFinished";
 		vars.Unity.Make<int>(g.Static, g["instance"], g["gameManager_"], gMan["state_"]).Name = "gameState";
+		vars.Unity.MakeString(64, g.Static, g["instance"], g["gameData_"], gdm["gameData_"], gd["stringDictionary_"], dict["valueSlots"], 0x10 + 0x4 * 2, str["start_char"]).Name = "gameMode";
 
 		vars.Unity.MakeString(16, gMan.Static, gMan["sceneName_"], str["start_char"]).Name = "scene";
 		vars.Unity.MakeString(64, g.Static, g["instance"], g["gameManager_"], gMan["mode_"], gm["levelInfo_"], li["levelName_"], str["start_char"]).Name = "level";
+		vars.Unity.Make<double>(g.Static, g["instance"], g["gameManager_"], gMan["mode_"], am["adventureManager_"], 0x20).Name = "modeTime";
 
 		return true;
 	});
@@ -108,6 +117,7 @@ update
 	current.SceneName = vars.Unity["scene"].Current;
 	current.LevelName = vars.Unity["level"].Current;
 	current.GameState = vars.Unity["gameState"].Current;
+	current.GameMode = vars.Unity["gameMode"].Current;
 	current.PlayerFinished = vars.Unity["playerFinished"].Current;
 }
 
@@ -123,7 +133,18 @@ start
 
 split
 {
-	return !old.PlayerFinished && current.PlayerFinished && settings[current.LevelName];
+	if (old.PlayerFinished || !current.PlayerFinished) return;
+
+	switch ((string)(current.GameMode))
+	{
+		case "Adventure":
+		case "Lost to Echoes":
+		case "Nexus":
+			return settings[current.LevelName];
+
+		default:
+			return true;
+	}
 }
 
 reset
