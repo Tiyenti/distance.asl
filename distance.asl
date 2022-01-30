@@ -1,179 +1,151 @@
-// Distance Autosplitter script - Provides autostart/split/reset and load removal
-// Created by Brionac, Californ1a, Seekr, and Tiyenti
-
-state("distance")
-{
-    byte playerFinished : "mono.dll", 0x001F40AC, 0x2D4, 0x58, 0x0, 0x7C, 0x0, 0x18, 0x10, 0xC, 0x8, 0x10, 0x8, 0x6D;
-    string255 richPresence : "discord-rpc.dll", 0xD51C;
-    int gameState : "mono.dll", 0x001F40AC, 0x2D4, 0x58, 0x0, 0x7C, 0x0, 0x18, 0x44;
-    string255 confirmDialog : "mono.dll", 0x001F40AC, 0x2D4, 0x58, 0x0, 0x7C, 0x0, 0x18, 0x20, 0x80, 0x28, 0x10, 0x11C, 0xC;
-    int finishType : "mono.dll", 0x001F40AC, 0x2D4, 0x58, 0x0, 0x7C, 0x0, 0x18, 0x10, 0xC, 0x8, 0x10, 0x20;
-}
-
-// keeping this around for any patch, though we'll need a way to detect what version of the game is being run before
-// this will be able to work
-//state("distance")
-//{
-//    int finishGrid : "Distance.exe", 0x01022164, 0x14;
-//    string255 richPresence : "discord-rpc.dll", 0xD51C;
-//    int gameState : "mono.dll", 0x001F62CC, 0x50, 0x3E0, 0x0, 0x18, 0x40;
-//    string255 confirmDialog : "mono.dll", 0x001F62CC, 0x50, 0x3E0, 0x0, 0x18, 0x20, 0x7c, 0x28, 0x10, 0x11c, 0xc;
-//}
+state("Distance") {}
 
 startup
 {
-    settings.Add("combine_cut", true, "Combine cutscenes and their adjacent levels into one split");
+	vars.Log = (Action<object>)(output => print("[Distance] " + output));
 
-    settings.CurrentDefaultParent = "combine_cut";
+	dynamic[,] sett =
+	{
+		{ null, "Adventure", true },
+			{ "Adventure", "Instantiation", false },
+			{ "Adventure", "Cataclysm",     true },
+			{ "Adventure", "Diversion",     true },
+			{ "Adventure", "Euphoria",      true },
+			{ "Adventure", "Entanglement",  true },
+			{ "Adventure", "Automation",    true },
+			{ "Adventure", "Abyss",         true },
+			{ "Adventure", "Embers",        true },
+			{ "Adventure", "Isolation",     true },
+			{ "Adventure", "Repulsion",     true },
+			{ "Adventure", "Compression",   true },
+			{ "Adventure", "Research",      true },
+			{ "Adventure", "Contagion",     true },
+			{ "Adventure", "Overload",      true },
+			{ "Adventure", "Ascension",     true },
+			{ "Adventure", "Enemy",         true },
+			{ "Adventure", "Credits",       false },
+		{ null, "Lost to Echoes", true },
+			{ "Lost to Echoes", "Long Ago",                      false },
+			{ "Lost to Echoes", "Forgotten Utopia",              true },
+			{ "Lost to Echoes", "A Deeper Void",                 true },
+			{ "Lost to Echoes", "Eye of the Storm",              true },
+			{ "Lost to Echoes", "The Sentinel Still Watches",    true },
+			{ "Lost to Echoes", "Shadow of the Beast",           true },
+			{ "Lost to Echoes", "Pulse of a Violent Heart",      true },
+			{ "Lost to Echoes", "It Was Supposed To Be Perfect", true },
+			{ "Lost to Echoes", "Echoes",                        true },
+		{ null, "Nexus", true },
+			{ "Nexus", "Mobilization", false },
+			{ "Nexus", "Resonance",    true },
+			{ "Nexus", "Deterrence",   true },
+			{ "Nexus", "Terminus",     false },
+			{ "Nexus", "Collapse",     true }
+	};
 
-    settings.Add("combine_inst", true, "Instantiation + Cataclysm");
-    settings.Add("combine_long", true, "Long Ago + Forgotten Utopia");
-    settings.Add("combine_mob", true, "Mobilization + Resonance");
-    settings.Add("combine_col", true, "Terminus + Collapse");
+	for (int i = 0; i < sett.GetLength(0); ++i)
+	{
+		var parent = sett[i, 0];
+		var id = sett[i, 1];
+		var state = sett[i, 2];
 
-    settings.CurrentDefaultParent = null;
+		settings.Add(id, state, parent == null ? id : "Split after finishing " + id, parent);
+	}
 
-    settings.Add("disable_enemy", false, "Disable Enemy split (if you prefer to manual split on hitting the visible grid)");
+	using (var prov = new Microsoft.CSharp.CSharpCodeProvider())
+	{
+		var param = new System.CodeDom.Compiler.CompilerParameters
+		{
+			GenerateInMemory = true,
+			ReferencedAssemblies = { "LiveSplit.Core.dll", "System.dll", "System.Core.dll", "System.Xml.dll", "System.Xml.Linq.dll" }
+		};
 
+		string mono = File.ReadAllText(@"Components\mono.cs"), helpers = File.ReadAllText(@"Components\mono_helpers.cs");
+		var asm = prov.CompileAssemblyFromSource(param, mono, helpers);
+		vars.Unity = Activator.CreateInstance(asm.CompiledAssembly.GetType("Unity.Game"));
+	}
+}
+
+onStart
+{
+	vars.WaitForStart = false;
 }
 
 init
 {
-    // There's a small period of time at the start of a run where the game is in a not-loading state,
-    // so in order to keep the start time at 0.00 we use this value. Once the first loading screen is detected,
-    // we set this to 1 (todo: change this to a boolean, change variable name), which will allow time to be counted
-    vars.splitOnce = 0;
+	vars.Unity.TryOnLoad = (Func<dynamic, bool>)(helper =>
+	{
+		var str = helper.GetClass("mscorlib", "String"); // String
+
+		var g = helper.GetClass("Assembly-CSharp", 0x200021C); // G
+
+		var pm = helper.GetClass("Assembly-CSharp", 0x2000C2D); // PlayerManager
+		var lp = helper.GetClass("Assembly-CSharp", 0x2000C2E); // LocalPlayer
+		var pdb = helper.GetClass("Assembly-CSharp", 0x20006A1); // PlayerDataBase
+
+		var gMan = helper.GetClass("Assembly-CSharp", 0x2000904); // GameManager
+		var gm = helper.GetClass("Assembly-CSharp", 0x200091E); // GameMode
+		var li = helper.GetClass("Assembly-CSharp", 0x2000B3F); // LevelInfo
+
+		vars.Unity.Make<bool>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finished_"]).Name = "playerFinished";
+		vars.Unity.Make<int>(g.Static, g["instance"], g["gameManager_"], gMan["state_"]).Name = "gameState";
+
+		vars.Unity.MakeString(16, gMan.Static, gMan["sceneName_"], str["start_char"]).Name = "scene";
+		vars.Unity.MakeString(64, g.Static, g["instance"], g["gameManager_"], gMan["mode_"], gm["levelInfo_"], li["levelName_"], str["start_char"]).Name = "level";
+
+		return true;
+	});
+
+	vars.Unity.Load(game);
+	vars.WaitForStart = false;
 }
 
 update
 {
-    if (timer.CurrentPhase == TimerPhase.NotRunning)
-    {
-        vars.splitOnce = 0;
-    }
+	if (!vars.Unity.Loaded) return false;
+
+	vars.Unity.UpdateAll(game);
+
+	current.SceneName = vars.Unity["scene"].Current;
+	current.LevelName = vars.Unity["level"].Current;
+	current.GameState = vars.Unity["gameState"].Current;
+	current.PlayerFinished = vars.Unity["playerFinished"].Current;
+}
+
+start
+{
+	if (old.GameState == 7 && current.GameState == 0 && current.SceneName == "MainMenu")
+		vars.WaitForStart = true;
+
+	if (!vars.WaitForStart) return;
+
+	return old.GameState < 8 && current.GameState >= 8 && current.SceneName == "GameMode";
 }
 
 split
 {
-    if (current.richPresence.Contains("Instantiation") && settings["combine_inst"] == true)
-    {
-        //print("Instantiation combined with Cataclysm, skipping");
-        return false;
-    }
-    if (current.richPresence.Contains("Long Ago") && settings["combine_long"] == true)
-    {
-        //print("Long Ago combined with Utopia, skipping");
-        return false;
-    }
-    if (current.richPresence.Contains("Mobilization") && settings["combine_mob"] == true)
-    {
-        //print("Mobilization combined with Resonance, skipping");
-        return false;
-    }
-    if (current.richPresence.Contains("Enemy") && settings["disable_enemy"] == true)
-    {
-        //print("Enemy split disabled, skipping");
-        return false;
-    }
-
-    if (current.richPresence.Contains("Terminus") && current.richPresence.Contains("Nexus | Solo") && settings["combine_col"] == true)
-    {
-        //print("Terminus combined with Collapse, skipping");
-        return false;
-    }
-
-    if (current.richPresence.Contains("\"Echoes\"") || current.richPresence.Contains("Collapse"))
-    {
-        return current.gameState == 0 && old.gameState != 0;
-    }
-    else
-    {
-        if (current.finishType == 1 && old.finishType != 1)
-        {
-            return true;
-        }
-
-        /* if (current.playerFinished == 1 && old.playerFinished != 1)
-        {
-            print("finishType = " + current.finishType + " | is it <= 1?");
-            //if (current.finishType == 1)
-            //{
-                //print("if true, will split!");
-                //return true;
-                //return current.finishType <= 1;
-            //}
-        }*/
-
-        // Detect the first load, and then set the flag that will allow the timer to count
-        if (vars.splitOnce == 0)
-        {
-            if (current.gameState < 7)
-            {
-                vars.splitOnce = 1;
-            }
-        }
-    }
-}
- 
-start
-{
-    if (current.richPresence.Contains("In Main Menu"))
-    {
-        return current.gameState == 0 && old.gameState == 7;
-    }
+	return !old.PlayerFinished && current.PlayerFinished && settings[current.LevelName];
 }
 
 reset
 {
-    if (current.confirmDialog != null)
-    {
-        if (current.confirmDialog.StartsWith("Are you sure that you'd like to return to the main menu?")
-            && !old.confirmDialog.StartsWith("Are you sure that you'd like to return to the main menu?"))
-        {
-            return true;
-        }
-        else if (current.confirmDialog.StartsWith("Are you sure you want to go to the main menu?")
-            && !old.confirmDialog.StartsWith("Are you sure you want to go to the main menu?"))
-        {
-            return true;
-        }
-    }
-}
-
-gameTime
-{
-    // Prevent time from counting before the run begins
-    if (vars.splitOnce == 0)
-    {
-        return new TimeSpan();
-    }
+	return old.SceneName == "GameMode" && current.SceneName == "MainMenu";
 }
 
 isLoading
 {
-    // Prevents LiveSplit's timer from freaking out over game time constantly being set every tick
-    if (vars.splitOnce == 0)
-    {
-        return true;
-    }
+	switch ((string)(current.SceneName))
+	{
+		case "MainMenu": return current.GameState < 7;
+		case "GameMode": return current.GameState < 8;
+	}
+}
 
-    if (current.richPresence.Contains("In Main Menu"))
-    {
-        if (current.gameState < 7)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-    else if (current.gameState < 8)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+exit
+{
+	vars.Unity.Reset();
+}
+
+shutdown
+{
+	vars.Unity.Reset();
 }
