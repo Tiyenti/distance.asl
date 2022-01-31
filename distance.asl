@@ -74,12 +74,12 @@ init
 {
 	vars.Unity.TryOnLoad = (Func<dynamic, bool>)(helper =>
 	{
-		var str = helper.GetClass("mscorlib", "String"); // String
-		var dict = helper.GetClass("mscorlib", "Dictionary`2"); // Dictionary<TKey, TValue>
-
 		var g = helper.GetClass("Assembly-CSharp", 0x200021C); // G
 		if (g == null)
 			return false;
+
+		var str = helper.GetClass("mscorlib", "String"); // String
+		var dict = helper.GetClass("mscorlib", "Dictionary`2"); // Dictionary<TKey, TValue>
 
 		var pm = helper.GetClass("Assembly-CSharp", 0x2000C2D); // PlayerManager
 		var lp = helper.GetClass("Assembly-CSharp", 0x2000C2E); // LocalPlayer
@@ -99,7 +99,6 @@ init
 
 		vars.Unity.MakeString(16, gMan.Static, gMan["sceneName_"], str["start_char"]).Name = "scene";
 		vars.Unity.MakeString(64, g.Static, g["instance"], g["gameManager_"], gMan["mode_"], gm["levelInfo_"], li["levelName_"], str["start_char"]).Name = "level";
-		vars.Unity.Make<double>(g.Static, g["instance"], g["gameManager_"], gMan["mode_"], am["adventureManager_"], 0x20).Name = "modeTime";
 
 		return true;
 	});
