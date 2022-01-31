@@ -102,6 +102,10 @@ init
 		var gdm = helper.GetClass("Assembly-CSharp", 0x20008F4); // GameDataManager
 		var gd = helper.GetClass("Assembly-CSharp", 0x20008F2); // GameData
 
+		var mpm = helper.GetClass("Assembly-CSharp", 0x02000B50); // MenuPanelManager
+		var mpl = helper.GetClass("Assembly-CSharp", 0x02000600); // MessagePanelLogic
+		var ul =  helper.GetClass("Assembly-CSharp", 0x02000148); // UILabel
+
 		vars.Unity.Make<bool>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finished_"]).Name = "playerFinished";
 		vars.Unity.Make<int>(g.Static, g["instance"], g["gameManager_"], gMan["state_"]).Name = "gameState";
 		vars.Unity.MakeString(256, g.Static, g["instance"], g["gameData_"], gdm["gameData_"], gd["stringDictionary_"], dict["valueSlots"], 0x10 + 0x4 * 3, str["start_char"]).Name = "gameMode";
@@ -111,6 +115,8 @@ init
 		vars.Unity.Make<double>(g.Static, g["instance"], g["gameManager_"], gMan["mode_"], am["adventureManager_"], 0x20).Name = "modeTime";
 
 		vars.Unity.Make<int>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finishType_"]).Name = "finishType";
+
+		vars.Unity.MakeString(256, g.Static, g["instance"], g["menuPanelManager_"], mpm["messagePanel_"], mpl["messageLabel_"], ul["mText"], str["start_char"]).Name = "messagePanelLabel";
 
 		return true;
 	});
@@ -134,10 +140,12 @@ update
 	current.GameMode = vars.Unity["gameMode"].Current;
 	current.PlayerFinished = vars.Unity["playerFinished"].Current;
 	current.FinishType = vars.Unity["finishType"].Current;
+	current.MessagePanelLabel = vars.Unity["messagePanelLabel"].Current;
 
 	vars.Log(current.PlayerFinished);
 	vars.Log(current.GameMode);
 	vars.Log(current.LevelName);
+	vars.Log(current.MessagePanelLabel);
 }
 
 start
@@ -180,7 +188,12 @@ split
 
 reset
 {
-	//return old.SceneName == "GameMode" && current.SceneName == "MainMenu";
+	var text1 = "Are you sure that you'd like to return to the main menu?";
+	var text2 = "Are you sure you want to go to the main menu?";
+
+	if ((current.MessagePanelLabel == text1 && old.MessagePanelLabel != text1) ||
+		(current.MessagePanelLabel == text2 && old.MessagePanelLabel != text2)	)
+		return true;
 }
 
 gameTime 
