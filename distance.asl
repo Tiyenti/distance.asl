@@ -23,7 +23,7 @@ startup
 			{ "Adventure", "Overload",      true },
 			{ "Adventure", "Ascension",     true },
 			{ "Adventure", "Enemy",         true },
-			{ "Adventure", "Credits",       false },
+			{ "Adventure", "Credits",       true },
 		{ null, "Lost to Echoes", true },
 			{ "Lost to Echoes", "Long Ago",                      false },
 			{ "Lost to Echoes", "Forgotten Utopia",              true },
@@ -74,12 +74,12 @@ init
 {
 	vars.Unity.TryOnLoad = (Func<dynamic, bool>)(helper =>
 	{
+		var str = helper.GetClass("mscorlib", "String"); // String
+		var dict = helper.GetClass("mscorlib", "Dictionary`2"); // Dictionary<TKey, TValue>
+
 		var g = helper.GetClass("Assembly-CSharp", 0x200021C); // G
 		if (g == null)
 			return false;
-
-		var str = helper.GetClass("mscorlib", "String"); // String
-		var dict = helper.GetClass("mscorlib", "Dictionary`2"); // Dictionary<TKey, TValue>
 
 		var pm = helper.GetClass("Assembly-CSharp", 0x2000C2D); // PlayerManager
 		var lp = helper.GetClass("Assembly-CSharp", 0x2000C2E); // LocalPlayer
@@ -99,6 +99,7 @@ init
 
 		vars.Unity.MakeString(16, gMan.Static, gMan["sceneName_"], str["start_char"]).Name = "scene";
 		vars.Unity.MakeString(64, g.Static, g["instance"], g["gameManager_"], gMan["mode_"], gm["levelInfo_"], li["levelName_"], str["start_char"]).Name = "level";
+		vars.Unity.Make<double>(g.Static, g["instance"], g["gameManager_"], gMan["mode_"], am["adventureManager_"], 0x20).Name = "modeTime";
 
 		return true;
 	});
@@ -118,6 +119,8 @@ update
 	current.GameState = vars.Unity["gameState"].Current;
 	current.GameMode = vars.Unity["gameMode"].Current;
 	current.PlayerFinished = vars.Unity["playerFinished"].Current;
+
+	vars.Log(current.PlayerFinished);
 }
 
 start
@@ -132,15 +135,24 @@ start
 
 split
 {
-	if (old.PlayerFinished || !current.PlayerFinished) return;
+	var finished = !old.PlayerFinished && current.PlayerFinished;
+	var setting = settings[current.LevelName];
+	var startedLoading = old.gameState != 0 && current.gameState == 0;
 
 	switch ((string)(current.GameMode))
 	{
 		case "Adventure":
+			return finished && setting;
 		case "Lost to Echoes":
-		case "Nexus":
-			return settings[current.LevelName];
+			if (current.LevelName == "Echoes")
+				return startedLoading && setting;
 
+			return finished && setting;
+		case "Nexus":
+			if (current.LevelName == "Collapse")
+				return startedLoading && setting;
+
+			return finished && setting;
 		default:
 			return true;
 	}
