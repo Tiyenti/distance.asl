@@ -68,10 +68,19 @@ startup
 onStart
 {
 	vars.WaitForStart = false;
+
+	// RTA starts earlier than loadless time does, and the time where that starts
+	// is in a state where the game isn't actually loading yet, so the timer counts up a bit
+	// before the first loading screen
+	// This looks kinda bad, so we use this value to lock the game time to 0 at the start until
+	// after the first loading screen.
+	vars.LockGameTime = true;
 }
 
 init
 {
+	vars.LockGameTime = true;
+
 	vars.Unity.TryOnLoad = (Func<dynamic, bool>)(helper =>
 	{
 		var str = helper.GetClass("mscorlib", "String"); // String
@@ -95,7 +104,9 @@ init
 
 		vars.Unity.Make<bool>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finished_"]).Name = "playerFinished";
 		vars.Unity.Make<int>(g.Static, g["instance"], g["gameManager_"], gMan["state_"]).Name = "gameState";
-		vars.Unity.MakeString(64, g.Static, g["instance"], g["gameData_"], gdm["gameData_"], gd["stringDictionary_"], dict["valueSlots"], 0x10 + 0x4 * 2, str["start_char"]).Name = "gameMode";
+		vars.Unity.MakeString(256, g.Static, g["instance"], g["gameData_"], gdm["gameData_"], gd["stringDictionary_"], dict["valueSlots"], 0x10 + 0x4 * 3, str["start_char"]).Name = "gameMode";
+
+		//vars.Unity.Make<int>(g.Static, g["instance"], g["gameManager_"], gMan["mode_"], gm[]).Name = "gameModeID";
 
 		vars.Unity.MakeString(16, gMan.Static, gMan["sceneName_"], str["start_char"]).Name = "scene";
 		vars.Unity.MakeString(64, g.Static, g["instance"], g["gameManager_"], gMan["mode_"], gm["levelInfo_"], li["levelName_"], str["start_char"]).Name = "level";
@@ -110,6 +121,9 @@ init
 
 update
 {
+	// Reset LockGameTime if the timer's not running for next run
+	if (timer.CurrentPhase == TimerPhase.NotRunning) vars.LockGameTime = true;
+
 	if (!vars.Unity.Loaded) return false;
 
 	vars.Unity.UpdateAll(game);
@@ -121,23 +135,28 @@ update
 	current.PlayerFinished = vars.Unity["playerFinished"].Current;
 
 	vars.Log(current.PlayerFinished);
+	vars.Log(current.GameMode);
+	vars.Log(current.LevelName);
 }
 
 start
 {
-	if (old.GameState == 7 && current.GameState == 0 && current.SceneName == "MainMenu")
-		vars.WaitForStart = true;
-
-	if (!vars.WaitForStart) return;
-
-	return old.GameState < 8 && current.GameState >= 8 && current.SceneName == "GameMode";
+	if (current.SceneName == "MainMenu") return current.GameState == 0 && old.GameState == 7;
 }
 
 split
 {
+	// Unlock game time once the loading screen shows up.
+	// For whatever reason, doing this check in Update doesn't seem to work?
+	// So I do it here instead.
+	if (vars.LockGameTime && current.GameState < 7)
+	{
+		vars.LockGameTime = false;
+	}
+
 	var finished = !old.PlayerFinished && current.PlayerFinished;
 	var setting = settings[current.LevelName];
-	var startedLoading = old.gameState != 0 && current.gameState == 0;
+	var startedLoading = old.GameState != 0 && current.GameState == 0;
 
 	switch ((string)(current.GameMode))
 	{
@@ -154,17 +173,34 @@ split
 
 			return finished && setting;
 		default:
-			return true;
+			return finished;
 	}
 }
 
 reset
 {
-	return old.SceneName == "GameMode" && current.SceneName == "MainMenu";
+	//return old.SceneName == "GameMode" && current.SceneName == "MainMenu";
+}
+
+gameTime 
+{
+	// Before the first load, the timer needs to stay at 0.
+	// This is where that LockGameTime variable from above comes in;
+	// Until LockGameTime is false, just return a new timespan so the timer
+	// stays at 0:00.00 before the first loading screen
+	if (vars.LockGameTime) return new TimeSpan();
 }
 
 isLoading
 {
+	// With the LockGameTime thing above, LiveSplit's timer display will freak out
+	// a bit since every update refreshes the time. Until LockGameTime is set to false,
+	// just say we're always loading the game.
+	// I tried just doing this solution previously without the gameTime stuff, but it doesn't
+	// look like the isLoading function runs fast enough for that to work. This whole thing is
+	// a bit of a hack but I'm unsure of a better way to do this.
+	if (vars.LockGameTime) return true;
+
 	switch ((string)(current.SceneName))
 	{
 		case "MainMenu": return current.GameState < 7;
