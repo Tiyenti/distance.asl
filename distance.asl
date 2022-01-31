@@ -106,11 +106,11 @@ init
 		vars.Unity.Make<int>(g.Static, g["instance"], g["gameManager_"], gMan["state_"]).Name = "gameState";
 		vars.Unity.MakeString(256, g.Static, g["instance"], g["gameData_"], gdm["gameData_"], gd["stringDictionary_"], dict["valueSlots"], 0x10 + 0x4 * 3, str["start_char"]).Name = "gameMode";
 
-		//vars.Unity.Make<int>(g.Static, g["instance"], g["gameManager_"], gMan["mode_"], gm[]).Name = "gameModeID";
-
 		vars.Unity.MakeString(16, gMan.Static, gMan["sceneName_"], str["start_char"]).Name = "scene";
 		vars.Unity.MakeString(64, g.Static, g["instance"], g["gameManager_"], gMan["mode_"], gm["levelInfo_"], li["levelName_"], str["start_char"]).Name = "level";
 		vars.Unity.Make<double>(g.Static, g["instance"], g["gameManager_"], gMan["mode_"], am["adventureManager_"], 0x20).Name = "modeTime";
+
+		vars.Unity.Make<int>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finishType_"]).Name = "finishType";
 
 		return true;
 	});
@@ -133,6 +133,7 @@ update
 	current.GameState = vars.Unity["gameState"].Current;
 	current.GameMode = vars.Unity["gameMode"].Current;
 	current.PlayerFinished = vars.Unity["playerFinished"].Current;
+	current.FinishType = vars.Unity["finishType"].Current;
 
 	vars.Log(current.PlayerFinished);
 	vars.Log(current.GameMode);
@@ -154,7 +155,7 @@ split
 		vars.LockGameTime = false;
 	}
 
-	var finished = !old.PlayerFinished && current.PlayerFinished;
+	var finished = (!old.PlayerFinished && current.PlayerFinished) && current.FinishType == 1;
 	var setting = settings[current.LevelName];
 	var startedLoading = old.GameState != 0 && current.GameState == 0;
 
