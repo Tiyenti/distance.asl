@@ -105,15 +105,30 @@ init
 			var ul = helper.GetClass("Assembly-CSharp", 0x02000148); // UILabel
 
 			vars.Unity.Make<bool>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finished_"]).Name = "playerFinished";
+			vars.Unity.Make<int>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finishType_"]).Name = "finishType";
 			vars.Unity.Make<int>(g.Static, g["instance"], g["gameManager_"], gMan["state_"]).Name = "gameState";
-			vars.Unity.MakeString(256, g.Static, g["instance"], g["gameData_"], gdm["gameData_"], gd["stringDictionary_"], dict["valueSlots"], 0x10 + 0x4 * 3, str["start_char"]).Name = "gameMode";
+			vars.Unity.MakeString(256, g.Static, g["instance"], g["menuPanelManager_"], mpm["messagePanel_"], mpl["messageLabel_"], ul["mText"], str["start_char"]).Name = "messagePanelLabel";
 
 			vars.Unity.MakeString(16, gMan.Static, gMan["sceneName_"], str["start_char"]).Name = "scene";
 			vars.Unity.MakeString(64, g.Static, g["instance"], g["gameManager_"], gMan["mode_"], gm["levelInfo_"], li["levelName_"], str["start_char"]).Name = "level";
 
-			vars.Unity.Make<int>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finishType_"]).Name = "finishType";
+			vars.GetValue = (Func<string, string>)(key =>
+			{
+				IntPtr dictPtr = IntPtr.Zero;
+				new DeepPointer(g.Static + g["instance"], g["gameData_"], gdm["gameData_"], gd["stringDictionary_"], 0x0).DerefOffsets(game, out dictPtr);
 
-			vars.Unity.MakeString(256, g.Static, g["instance"], g["menuPanelManager_"], mpm["messagePanel_"], mpl["messageLabel_"], ul["mText"], str["start_char"]).Name = "messagePanelLabel";
+				var count = game.ReadValue<int>(dictPtr + (int)(dict["count"]));
+				IntPtr keys = game.ReadPointer(dictPtr + (int)(dict["keySlots"])), values = game.ReadPointer(dictPtr + (int)(dict["valueSlots"]));
+
+				for (int i = 0; i < count; ++i)
+				{
+					var item = game.ReadString(game.ReadPointer(keys + 0x10 + 0x4 * i) + (int)(str["start_char"]), 64);
+					if (item == key)
+						return game.ReadString(game.ReadPointer(values + 0x10 + 0x4 * i) + (int)(str["start_char"]), 64);
+				}
+
+				return null;
+			});
 
 			return true;
 		}
@@ -136,10 +151,10 @@ update
 	current.SceneName = vars.Unity["scene"].Current;
 	current.LevelName = vars.Unity["level"].Current ?? "";
 	current.GameState = vars.Unity["gameState"].Current;
-	current.GameMode = vars.Unity["gameMode"].Current;
 	current.PlayerFinished = vars.Unity["playerFinished"].Current;
 	current.FinishType = vars.Unity["finishType"].Current;
 	current.MessagePanelLabel = vars.Unity["messagePanelLabel"].Current;
+	current.GameMode = vars.GetValue("Game Mode");
 
 	// vars.Log(current.PlayerFinished);
 	// vars.Log(current.GameMode);
