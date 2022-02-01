@@ -137,10 +137,17 @@ init
 
 			return true;
 		}
-		catch (InvalidOperationException)
+		catch (Exception ex)
 		{
-			helper.ClearImages();
-			return false;
+			if (ex is InvalidOperationException || ex is Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+			{
+				helper.ClearImages();
+				return false;
+			}
+			else
+			{
+				throw ex;
+			}
 		}
 	});
 
