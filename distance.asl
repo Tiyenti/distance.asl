@@ -106,7 +106,7 @@ init
 
 			vars.Unity.Make<bool>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finished_"]).Name = "playerFinished";
 			vars.Unity.Make<int>(g.Static, g["instance"], g["gameManager_"], gMan["state_"]).Name = "gameState";
-			vars.Unity.MakeString(256, g.Static, g["instance"], g["gameData_"], gdm["gameData_"], gd["stringDictionary_"], dict["valueSlots"], 0x10 + 0x4 * 3, str["start_char"]).Name = "gameMode";
+			vars.Unity.MakeString(256, g.Static, g["instance"], g["gameData_"], gdm["gameData_"], gd["stringDictionary_"], dict["valueSlots"], 0x10 + 0x4 * 2, str["start_char"]).Name = "gameMode";
 
 			vars.Unity.MakeString(16, gMan.Static, gMan["sceneName_"], str["start_char"]).Name = "scene";
 			vars.Unity.MakeString(64, g.Static, g["instance"], g["gameManager_"], gMan["mode_"], gm["levelInfo_"], li["levelName_"], str["start_char"]).Name = "level";
