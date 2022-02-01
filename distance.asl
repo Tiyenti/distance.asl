@@ -2,6 +2,9 @@ state("Distance") {}
 
 startup
 {
+	vars.UnityLoadRetryCounter = 0;
+	vars.LOADRETRYTHRESHOLD = 600;
+
 	vars.Log = (Action<object>)(output => print("[Distance] " + output));
 	vars.TEXT1 = "Are you sure that you'd like to return to the main menu?";
 	vars.TEXT2 = "Are you sure you want to go to the main menu?";
@@ -144,7 +147,18 @@ init
 
 update
 {
-	if (!vars.Unity.Loaded) return false;
+	if (!vars.Unity.Loaded) 
+	{
+		vars.UnityLoadRetryCounter++;
+		if (vars.UnityLoadRetryCounter > vars.LOADRETRYTHRESHOLD)
+		{
+			vars.Log("retrying unity load");
+			vars.UnityLoadRetryCounter = 0;
+			vars.Unity.Load(game);
+		}
+
+		return false;
+	}
 
 	vars.Unity.UpdateAll(game);
 
@@ -220,10 +234,12 @@ isLoading
 
 exit
 {
+	vars.UnityLoadRetryCounter = 0;
 	vars.Unity.Reset();
 }
 
 shutdown
 {
+	vars.UnityLoadRetryCounter = 0;
 	vars.Unity.Reset();
 }
