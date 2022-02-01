@@ -161,7 +161,7 @@ update
 	current.PlayerFinished = vars.Unity["playerFinished"].Current;
 	current.FinishType = vars.Unity["finishType"].Current;
 	current.MessagePanelLabel = vars.Unity["messagePanelLabel"].Current;
-	current.GameMode = vars.GetValue("Game Mode");
+	current.GameMode = vars.GetValue("Game Mode") ?? "";
 
 	// vars.Log(current.PlayerFinished);
 	// vars.Log(current.GameMode);
