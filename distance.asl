@@ -2,9 +2,6 @@ state("Distance") {}
 
 startup
 {
-	vars.UnityLoadRetryCounter = 0;
-	vars.LOADRETRYTHRESHOLD = 600;
-
 	vars.Log = (Action<object>)(output => print("[Distance] " + output));
 	vars.TEXT1 = "Are you sure that you'd like to return to the main menu?";
 	vars.TEXT2 = "Are you sure you want to go to the main menu?";
@@ -90,12 +87,17 @@ init
 			var dict = helper.GetClass("mscorlib", "Dictionary`2"); // Dictionary<TKey, TValue>
 
 			var g = helper.GetClass("Assembly-CSharp", 0x200021C); // G
+			if (g.Static == IntPtr.Zero)
+				return false;
 
 			var pm = helper.GetClass("Assembly-CSharp", 0x2000C2D); // PlayerManager
 			var lp = helper.GetClass("Assembly-CSharp", 0x2000C2E); // LocalPlayer
 			var pdb = helper.GetClass("Assembly-CSharp", 0x20006A1); // PlayerDataBase
 
 			var gMan = helper.GetClass("Assembly-CSharp", 0x2000904); // GameManager
+			if (gMan.Static == IntPtr.Zero)
+				return false;
+
 			var gm = helper.GetClass("Assembly-CSharp", 0x200091E); // GameMode
 			var am = helper.GetClass("Assembly-CSharp", 0x2000720); // AdventureMode
 			var li = helper.GetClass("Assembly-CSharp", 0x2000B3F); // LevelInfo
@@ -130,7 +132,7 @@ init
 						return game.ReadString(game.ReadPointer(values + 0x10 + 0x4 * i) + (int)(str["start_char"]), 64);
 				}
 
-				return null;
+				return "";
 			});
 
 			return true;
@@ -147,22 +149,11 @@ init
 
 update
 {
-	if (!vars.Unity.Loaded) 
-	{
-		vars.UnityLoadRetryCounter++;
-		if (vars.UnityLoadRetryCounter > vars.LOADRETRYTHRESHOLD)
-		{
-			vars.Log("retrying unity load");
-			vars.UnityLoadRetryCounter = 0;
-			vars.Unity.Load(game);
-		}
-
-		return false;
-	}
+	if (!vars.Unity.Loaded) return false;
 
 	vars.Unity.UpdateAll(game);
 
-	current.SceneName = vars.Unity["scene"].Current;
+	current.SceneName = vars.Unity["scene"].Current ?? "";
 	current.LevelName = vars.Unity["level"].Current ?? "";
 	current.GameState = vars.Unity["gameState"].Current;
 	current.PlayerFinished = vars.Unity["playerFinished"].Current;
@@ -234,12 +225,10 @@ isLoading
 
 exit
 {
-	vars.UnityLoadRetryCounter = 0;
 	vars.Unity.Reset();
 }
 
 shutdown
 {
-	vars.UnityLoadRetryCounter = 0;
 	vars.Unity.Reset();
 }
