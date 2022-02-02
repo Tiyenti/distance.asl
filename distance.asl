@@ -134,7 +134,9 @@ init
 		}
 		catch (Exception ex)
 		{
-			if (ex is InvalidOperationException || ex is Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+			if (ex is InvalidOperationException ||
+			    ex is Microsoft.CSharp.RuntimeBinder.RuntimeBinderException ||
+				ex is KeyNotFoundException)
 			{
 				helper.ClearImages();
 				return false;
