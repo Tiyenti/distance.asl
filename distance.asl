@@ -184,7 +184,7 @@ split
 		vars.LockGameTime = false;
 
 	var finished = (!old.PlayerFinished && current.PlayerFinished) && current.FinishType == 1;
-	var setting = settings[current.LevelName];
+	var setting = settings.ContainsKey(current.LevelName) ? settings[current.LevelName] : true;
 	var startedLoading = old.GameState != 0 && current.GameState == 0;
 
 	switch ((string)(current.GameMode))
