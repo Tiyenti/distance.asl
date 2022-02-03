@@ -79,78 +79,56 @@ init
 {
 	vars.LockGameTime = true;
 
+	vars.Unity.Exceptions = new[] { "InvalidOperationException", "RuntimeBinderException", "KeyNotFoundException" };
 	vars.Unity.TryOnLoad = (Func<dynamic, bool>)(helper =>
 	{
-		try
+		var str = helper.GetClass("mscorlib", "String"); // String
+		var dict = helper.GetClass("mscorlib", "Dictionary`2"); // Dictionary<TKey, TValue>
+
+		var g = helper.GetClass("Assembly-CSharp", 0x200021C); // G
+		var pm = helper.GetClass("Assembly-CSharp", 0x2000C2D); // PlayerManager
+		var lp = helper.GetClass("Assembly-CSharp", 0x2000C2E); // LocalPlayer
+		var pdb = helper.GetClass("Assembly-CSharp", 0x20006A1); // PlayerDataBase
+
+		var gMan = helper.GetClass("Assembly-CSharp", 0x2000904); // GameManager
+		var gm = helper.GetClass("Assembly-CSharp", 0x200091E); // GameMode
+		var am = helper.GetClass("Assembly-CSharp", 0x2000720); // AdventureMode
+		var li = helper.GetClass("Assembly-CSharp", 0x2000B3F); // LevelInfo
+
+		var gdm = helper.GetClass("Assembly-CSharp", 0x20008F4); // GameDataManager
+		var gd = helper.GetClass("Assembly-CSharp", 0x20008F2); // GameData
+
+		var mpm = helper.GetClass("Assembly-CSharp", 0x02000B50); // MenuPanelManager
+		var mpl = helper.GetClass("Assembly-CSharp", 0x02000600); // MessagePanelLogic
+		var ul = helper.GetClass("Assembly-CSharp", 0x02000148); // UILabel
+
+		vars.Unity.Make<bool>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finished_"]).Name = "playerFinished";
+		vars.Unity.Make<int>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finishType_"]).Name = "finishType";
+		vars.Unity.Make<int>(g.Static, g["instance"], g["gameManager_"], gMan["state_"]).Name = "gameState";
+		vars.Unity.MakeString(256, g.Static, g["instance"], g["menuPanelManager_"], mpm["messagePanel_"], mpl["messageLabel_"], ul["mText"], str["start_char"]).Name = "messagePanelLabel";
+
+		vars.Unity.MakeString(16, gMan.Static, gMan["sceneName_"], str["start_char"]).Name = "scene";
+		vars.Unity.MakeString(64, g.Static, g["instance"], g["gameManager_"], gMan["mode_"], gm["levelInfo_"], li["levelName_"], str["start_char"]).Name = "level";
+
+		vars.GetValue = (Func<string, string>)(key =>
 		{
-			var str = helper.GetClass("mscorlib", "String"); // String
-			var dict = helper.GetClass("mscorlib", "Dictionary`2"); // Dictionary<TKey, TValue>
+			IntPtr dictPtr = IntPtr.Zero;
+			new DeepPointer(g.Static + g["instance"], g["gameData_"], gdm["gameData_"], gd["stringDictionary_"], 0x0).DerefOffsets(game, out dictPtr);
 
-			var g = helper.GetClass("Assembly-CSharp", 0x200021C); // G
-			if (g.Static == IntPtr.Zero)
-				return false;
+			var count = game.ReadValue<int>(dictPtr + (int)(dict["count"]));
+			IntPtr keys = game.ReadPointer(dictPtr + (int)(dict["keySlots"])), values = game.ReadPointer(dictPtr + (int)(dict["valueSlots"]));
 
-			var pm = helper.GetClass("Assembly-CSharp", 0x2000C2D); // PlayerManager
-			var lp = helper.GetClass("Assembly-CSharp", 0x2000C2E); // LocalPlayer
-			var pdb = helper.GetClass("Assembly-CSharp", 0x20006A1); // PlayerDataBase
-
-			var gMan = helper.GetClass("Assembly-CSharp", 0x2000904); // GameManager
-			if (gMan.Static == IntPtr.Zero)
-				return false;
-
-			var gm = helper.GetClass("Assembly-CSharp", 0x200091E); // GameMode
-			var am = helper.GetClass("Assembly-CSharp", 0x2000720); // AdventureMode
-			var li = helper.GetClass("Assembly-CSharp", 0x2000B3F); // LevelInfo
-
-			var gdm = helper.GetClass("Assembly-CSharp", 0x20008F4); // GameDataManager
-			var gd = helper.GetClass("Assembly-CSharp", 0x20008F2); // GameData
-
-			var mpm = helper.GetClass("Assembly-CSharp", 0x02000B50); // MenuPanelManager
-			var mpl = helper.GetClass("Assembly-CSharp", 0x02000600); // MessagePanelLogic
-			var ul = helper.GetClass("Assembly-CSharp", 0x02000148); // UILabel
-
-			vars.Unity.Make<bool>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finished_"]).Name = "playerFinished";
-			vars.Unity.Make<int>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finishType_"]).Name = "finishType";
-			vars.Unity.Make<int>(g.Static, g["instance"], g["gameManager_"], gMan["state_"]).Name = "gameState";
-			vars.Unity.MakeString(256, g.Static, g["instance"], g["menuPanelManager_"], mpm["messagePanel_"], mpl["messageLabel_"], ul["mText"], str["start_char"]).Name = "messagePanelLabel";
-
-			vars.Unity.MakeString(16, gMan.Static, gMan["sceneName_"], str["start_char"]).Name = "scene";
-			vars.Unity.MakeString(64, g.Static, g["instance"], g["gameManager_"], gMan["mode_"], gm["levelInfo_"], li["levelName_"], str["start_char"]).Name = "level";
-
-			vars.GetValue = (Func<string, string>)(key =>
+			for (int i = 0; i < count; ++i)
 			{
-				IntPtr dictPtr = IntPtr.Zero;
-				new DeepPointer(g.Static + g["instance"], g["gameData_"], gdm["gameData_"], gd["stringDictionary_"], 0x0).DerefOffsets(game, out dictPtr);
-
-				var count = game.ReadValue<int>(dictPtr + (int)(dict["count"]));
-				IntPtr keys = game.ReadPointer(dictPtr + (int)(dict["keySlots"])), values = game.ReadPointer(dictPtr + (int)(dict["valueSlots"]));
-
-				for (int i = 0; i < count; ++i)
-				{
-					var item = game.ReadString(game.ReadPointer(keys + 0x10 + 0x4 * i) + (int)(str["start_char"]), 64);
-					if (item == key)
-						return game.ReadString(game.ReadPointer(values + 0x10 + 0x4 * i) + (int)(str["start_char"]), 64);
-				}
-
-				return "";
-			});
-
-			return true;
-		}
-		catch (Exception ex)
-		{
-			if (ex is InvalidOperationException ||
-			    ex is Microsoft.CSharp.RuntimeBinder.RuntimeBinderException ||
-				ex is KeyNotFoundException)
-			{
-				helper.ClearImages();
-				return false;
+				var item = game.ReadString(game.ReadPointer(keys + 0x10 + 0x4 * i) + (int)(str["start_char"]), 64);
+				if (item == key)
+					return game.ReadString(game.ReadPointer(values + 0x10 + 0x4 * i) + (int)(str["start_char"]), 64);
 			}
-			else
-			{
-				throw ex;
-			}
-		}
+
+			return "";
+		});
+
+		return true;
 	});
 
 	vars.Unity.Load(game);
