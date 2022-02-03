@@ -1,7 +1,6 @@
 LiveSplit autosplitter script created for Distance.
 
-Majority of the actual code was written by me (Tiyenti). Additional credit goes to:
+Current version written by Ero and Tiyenti.
 
-* Seekr, for finding most of the pointer paths used in the script.
-* Brionac, for also helping to find pointers.
-* Californ1a, for advice/testing.
+Additional credit to Seekr, Brionac and Californ1a for assistance with
+finding pointer paths for original version of the script (pre-rewrite).
