@@ -125,7 +125,7 @@ init
 					return game.ReadString(game.ReadPointer(values + 0x10 + 0x4 * i) + (int)(str["start_char"]), 64);
 			}
 
-			return "";
+			return null;
 		});
 
 		return true;
