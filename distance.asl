@@ -139,7 +139,9 @@ init
 		}
 		catch (Exception ex)
 		{
-			if (ex is InvalidOperationException || ex is Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+			if (ex is InvalidOperationException ||
+			    ex is Microsoft.CSharp.RuntimeBinder.RuntimeBinderException ||
+				ex is KeyNotFoundException)
 			{
 				helper.ClearImages();
 				return false;
@@ -166,7 +168,7 @@ update
 	current.PlayerFinished = vars.Unity["playerFinished"].Current;
 	current.FinishType = vars.Unity["finishType"].Current;
 	current.MessagePanelLabel = vars.Unity["messagePanelLabel"].Current;
-	current.GameMode = vars.GetValue("Game Mode");
+	current.GameMode = vars.GetValue("Game Mode") ?? "";
 
 	// vars.Log(current.PlayerFinished);
 	// vars.Log(current.GameMode);
@@ -187,7 +189,7 @@ split
 		vars.LockGameTime = false;
 
 	var finished = (!old.PlayerFinished && current.PlayerFinished) && current.FinishType == 1;
-	var setting = settings[current.LevelName];
+	var setting = settings.ContainsKey(current.LevelName) ? settings[current.LevelName] : true;
 	var startedLoading = old.GameState != 0 && current.GameState == 0;
 
 	switch ((string)(current.GameMode))
