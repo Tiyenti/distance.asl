@@ -68,7 +68,6 @@ init
 {
 	vars.LockGameTime = true;
 
-	vars.Unity.Exceptions = new[] { "InvalidOperationException", "RuntimeBinderException", "KeyNotFoundException" };
 	vars.Unity.TryOnLoad = (Func<dynamic, bool>)(helper =>
 	{
 		var str = helper.GetClass("mscorlib", "String"); // String
