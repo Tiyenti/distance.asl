@@ -53,7 +53,7 @@ startup
 		settings.Add(id, state, parent == null ? id : "Split after finishing " + id, parent);
 	}
 
-	vars.Unity = Assembly.Load(File.ReadAllBytes(@"Components\ULibrary.bin")).CreateInstance("ULibrary.Unity");
+	vars.Unity = Assembly.Load(File.ReadAllBytes(@"Components\UnityASL.bin")).CreateInstance("ULibrary.Unity");
 }
 
 onStart
