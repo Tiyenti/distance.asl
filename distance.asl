@@ -73,22 +73,22 @@ init
 		var str = helper.GetClass("mscorlib", "String"); // String
 		var dict = helper.GetClass("mscorlib", "Dictionary`2"); // Dictionary<TKey, TValue>
 
-		var g = helper.GetClass("Assembly-CSharp", 0x200021C); // G
-		var pm = helper.GetClass("Assembly-CSharp", 0x2000C2D); // PlayerManager
-		var lp = helper.GetClass("Assembly-CSharp", 0x2000C2E); // LocalPlayer
-		var pdb = helper.GetClass("Assembly-CSharp", 0x20006A1); // PlayerDataBase
+		var g = helper.GetClass("Assembly-CSharp", 0x020001E4); // G
+		var pm = helper.GetClass("Assembly-CSharp", 0x02000BF5); // PlayerManager
+		var lp = helper.GetClass("Assembly-CSharp", 0x02000BF6); // LocalPlayer
+		var pdb = helper.GetClass("Assembly-CSharp", 0x02000669); // PlayerDataBase
 
-		var gMan = helper.GetClass("Assembly-CSharp", 0x2000904); // GameManager
-		var gm = helper.GetClass("Assembly-CSharp", 0x200091E); // GameMode
-		var am = helper.GetClass("Assembly-CSharp", 0x2000720); // AdventureMode
-		var li = helper.GetClass("Assembly-CSharp", 0x2000B3F); // LevelInfo
+		var gMan = helper.GetClass("Assembly-CSharp", 0x020008CC); // GameManager
+		var gm = helper.GetClass("Assembly-CSharp", 0x020008E6); // GameMode
+		var am = helper.GetClass("Assembly-CSharp", 0x020006E8); // AdventureMode
+		var li = helper.GetClass("Assembly-CSharp", 0x02000B07); // LevelInfo
 
-		var gdm = helper.GetClass("Assembly-CSharp", 0x20008F4); // GameDataManager
-		var gd = helper.GetClass("Assembly-CSharp", 0x20008F2); // GameData
+		var gdm = helper.GetClass("Assembly-CSharp", 0x020008BC); // GameDataManager
+		var gd = helper.GetClass("Assembly-CSharp", 0x020008BA); // GameData
 
-		var mpm = helper.GetClass("Assembly-CSharp", 0x02000B50); // MenuPanelManager
-		var mpl = helper.GetClass("Assembly-CSharp", 0x02000600); // MessagePanelLogic
-		var ul = helper.GetClass("Assembly-CSharp", 0x02000148); // UILabel
+		var mpm = helper.GetClass("Assembly-CSharp", 0x02000B18); // MenuPanelManager
+		var mpl = helper.GetClass("Assembly-CSharp", 0x020005C8); // MessagePanelLogic
+		var ul = helper.GetClass("Assembly-CSharp", 0x02000110); // UILabel
 
 		vars.Unity.Make<bool>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finished_"]).Name = "playerFinished";
 		vars.Unity.Make<int>(g.Static, g["instance"], g["playerManager_"], pm["current_"], lp["playerData_"], pdb["finishType_"]).Name = "finishType";
