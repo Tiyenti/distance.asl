@@ -106,11 +106,14 @@ init
 			var count = game.ReadValue<int>(dictPtr + (int)(dict["count"]));
 			IntPtr keys = game.ReadPointer(dictPtr + (int)(dict["keySlots"])), values = game.ReadPointer(dictPtr + (int)(dict["valueSlots"]));
 
+			int ptrSize = IntPtr.Size;
+			int arrayStart = ptrSize == 8 ? 0x20 : 0x10;
+
 			for (int i = 0; i < count; ++i)
 			{
-				var item = game.ReadString(game.ReadPointer(keys + 0x10 + 0x4 * i) + (int)(str["start_char"]), 64);
+				var item = game.ReadString(game.ReadPointer(keys + arrayStart + ptrSize * i) + (int)(str["start_char"]), 64);
 				if (item == key)
-					return game.ReadString(game.ReadPointer(values + 0x10 + 0x4 * i) + (int)(str["start_char"]), 64);
+					return game.ReadString(game.ReadPointer(values + arrayStart + ptrSize * i) + (int)(str["start_char"]), 64);
 			}
 
 			return null;
